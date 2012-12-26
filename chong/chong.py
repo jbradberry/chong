@@ -97,28 +97,29 @@ class Board(object):
         s, c, r = self.moveRE.match(play).groups()
         return int(r), 'abcdefgh'.index(c), not(s)
 
+    def pack(self, play):
+        r, c, s = play
+        return ''.join(('P' * s, 'abcdefgh'[c], str(r)))
+
     def play(self, state, play):
-        v, h, s = self.parse(play)
+        r, c, s = play
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         if not s:
             if player == 1:
-                p1_xy = self.positions[(v, h)]
+                p1_xy = self.positions[(r, c)]
             else:
-                p2_xy = self.positions[(v, h)]
+                p2_xy = self.positions[(r, c)]
         else:
             if player == 1:
-                p1_placed += self.positions[(v, h)]
+                p1_placed += self.positions[(r, c)]
             else:
-                p2_placed += self.positions[(v, h)]
+                p2_placed += self.positions[(r, c)]
 
         player = 3 - player
         return (p1_xy, p2_xy, p1_placed, p2_placed, player)
 
     def is_legal(self, state, play):
-        if not self.moveRE.match(play):
-            return False
-        play = self.parse(play)
         plays = set(self.legal_plays(state))
         return play in plays
 
