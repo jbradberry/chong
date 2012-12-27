@@ -73,6 +73,9 @@ class Board(object):
 
         row_sep = "  |" + "-"*(4*self.cols - 1) + "|\n"
         header = " "*4 + "   ".join(string.lowercase[:self.cols]) + "\n"
+        reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
+            pieces[1], self.p1_starting_stones - bin(p1_placed).count('1'),
+            pieces[2], self.p2_starting_stones - bin(p2_placed).count('1'))
         msg = "Player {0} to move.\n".format(player)
 
         P = [[0 for c in xrange(self.cols)] for r in xrange(self.rows)]
@@ -90,7 +93,7 @@ class Board(object):
 
         board = row_sep.join("%d |"%i + "|".join(pieces[x] for x in row) +
                              "|\n" for i, row in enumerate(P))
-        board = ''.join((header, row_sep, board, row_sep, header, msg))
+        board = ''.join((header, row_sep, board, row_sep, header, reserve, msg))
         return board
 
     def parse(self, play):
