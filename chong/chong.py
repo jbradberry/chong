@@ -156,6 +156,9 @@ class Board(object):
 
         return jumps + pawn + placements
 
+    def next_player(self, state):
+        return state[-1]
+
     def winner(self, state_lst):
         state = state_lst[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
