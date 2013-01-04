@@ -97,7 +97,10 @@ class Board(object):
         return board
 
     def parse(self, play):
-        s, c, r = self.moveRE.match(play).groups()
+        result = self.moveRE.match(play)
+        if result is None:
+            return
+        s, c, r = result.groups()
         return int(r), 'abcdefgh'.index(c), not(s)
 
     def pack(self, play):
