@@ -66,7 +66,7 @@ class Board(object):
         # p1 position, p2 position, p1 placed, p2 placed, player to move
         return (self.positions[(0,3)], self.positions[(7,4)], 0, 0, 1)
 
-    def display(self, state, _unicode=True):
+    def display(self, state, play, _unicode=True):
         pieces = self.unicode_pieces if _unicode else self.str_pieces
 
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
@@ -76,7 +76,8 @@ class Board(object):
         reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
             pieces[1], self.p1_starting_stones - bin(p1_placed).count('1'),
             pieces[2], self.p2_starting_stones - bin(p2_placed).count('1'))
-        msg = "Player {0} to move.\n".format(player)
+        msg = "Played: {0}\nPlayer {1} to move.".format(
+            self.pack(play), player)
 
         P = [[0 for c in xrange(self.cols)] for r in xrange(self.rows)]
         if p1_xy:
