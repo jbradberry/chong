@@ -105,6 +105,8 @@ class Board(object):
         return int(r), 'abcdefgh'.index(c), not(s)
 
     def pack(self, play):
+        if play is None:
+            return ''
         r, c, s = play
         return ''.join(('P' * s, 'abcdefgh'[c], str(r)))
 
