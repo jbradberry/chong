@@ -108,7 +108,7 @@ class Board(object):
         if play is None:
             return ''
         r, c, s = play
-        return ''.join(('P' * s, 'abcdefgh'[c], str(r)))
+        return ''.join(('P' * (1 - s), 'abcdefgh'[c], str(r)))
 
     def play(self, state, play):
         r, c, s = play
