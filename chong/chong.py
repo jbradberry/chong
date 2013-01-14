@@ -76,8 +76,8 @@ class Board(object):
         reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
             pieces[1], self.p1_starting_stones - bin(p1_placed).count('1'),
             pieces[2], self.p2_starting_stones - bin(p2_placed).count('1'))
-        msg = "Played: {0}\nPlayer {1} to move.".format(
-            self.pack(play), player)
+        msg = "{0}Player {1} to move.".format(
+            "Played: {0}\n".format(self.pack(play)) if play else '', player)
 
         P = [[0 for c in xrange(self.cols)] for r in xrange(self.rows)]
         if p1_xy:
