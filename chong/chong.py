@@ -133,6 +133,7 @@ class Board(object):
         return play in plays
 
     def legal_plays(self, state_history):
+        state = state_history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         if player == 1 and p1_xy == 0:
