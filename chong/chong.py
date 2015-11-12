@@ -178,7 +178,7 @@ class Board(object):
             return 2
         if not self.legal_plays(state_history):
             return 3 - player
-        if state_lst.count(state) >= 3:
+        if state_history.count(state) >= 3:
             return 3
         return 0
 
