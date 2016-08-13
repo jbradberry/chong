@@ -66,7 +66,7 @@ class Board(object):
         # p1 position, p2 position, p1 placed, p2 placed, player to move
         return (self.positions[(0,3)], self.positions[(7,4)], 0, 0, 1)
 
-    def display(self, state, play, _unicode=True):
+    def display(self, state, action, _unicode=True):
         pieces = self.unicode_pieces if _unicode else self.str_pieces
 
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
@@ -77,7 +77,7 @@ class Board(object):
             pieces[1], self.p1_starting_stones - bin(p1_placed).count('1'),
             pieces[2], self.p2_starting_stones - bin(p2_placed).count('1'))
         msg = "{0}Player {1} to move.".format(
-            "Played: {0}\n".format(self.pack(play)) if play else '', player)
+            "Played: {0}\n".format(self.pack(action)) if action else '', player)
 
         P = [[0 for c in xrange(self.cols)] for r in xrange(self.rows)]
         if p1_xy:
@@ -97,21 +97,21 @@ class Board(object):
         board = ''.join((header, row_sep, board, row_sep, header, reserve, msg))
         return board
 
-    def parse(self, play):
-        result = self.moveRE.match(play)
+    def parse(self, action):
+        result = self.moveRE.match(action)
         if result is None:
             return
         s, c, r = result.groups()
         return int(r), 'abcdefgh'.index(c), not(s)
 
-    def pack(self, play):
-        if play is None:
+    def pack(self, action):
+        if action is None:
             return ''
-        r, c, s = play
+        r, c, s = action
         return ''.join(('P' * (1 - s), 'abcdefgh'[c], str(r)))
 
-    def next_state(self, state, play):
-        r, c, s = play
+    def next_state(self, state, action):
+        r, c, s = action
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         if not s:
@@ -128,12 +128,12 @@ class Board(object):
         player = 3 - player
         return (p1_xy, p2_xy, p1_placed, p2_placed, player)
 
-    def is_legal(self, state_history, play):
-        plays = set(self.legal_plays(state_history))
-        return play in plays
+    def is_legal(self, history, action):
+        actions = set(self.legal_actions(history))
+        return action in actions
 
-    def legal_plays(self, state_history):
-        state = state_history[-1]
+    def legal_actions(self, history):
+        state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         if player == 1 and p1_xy == 0:
@@ -166,8 +166,8 @@ class Board(object):
     def current_player(self, state):
         return state[-1]
 
-    def winner(self, state_history):
-        state = state_history[-1]
+    def winner(self, history):
+        state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         if p1_xy == 0 or p2_xy == 0:
@@ -176,9 +176,9 @@ class Board(object):
             return 1
         if self.inv_positions[p2_xy][0] == 0:
             return 2
-        if not self.legal_plays(state_history):
+        if not self.legal_actions(history):
             return 3 - player
-        if state_history.count(state) >= 3:
+        if history.count(state) >= 3:
             return 3
         return 0
 
