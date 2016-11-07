@@ -77,7 +77,7 @@ class Board(object):
             pieces[1], self.p1_starting_stones - bin(p1_placed).count('1'),
             pieces[2], self.p2_starting_stones - bin(p2_placed).count('1'))
         msg = "{0}Player {1} to move.".format(
-            "Played: {0}\n".format(self.pack(action)) if action else '', player)
+            "Played: {0}\n".format(self.unpack_action(action)) if action else '', player)
 
         P = [[0 for c in xrange(self.cols)] for r in xrange(self.rows)]
         if p1_xy:
@@ -97,14 +97,14 @@ class Board(object):
         board = ''.join((header, row_sep, board, row_sep, header, reserve, msg))
         return board
 
-    def parse(self, action):
-        result = self.moveRE.match(action)
+    def pack_action(self, notation):
+        result = self.moveRE.match(notation)
         if result is None:
             return
         s, c, r = result.groups()
         return int(r), 'abcdefgh'.index(c), not(s)
 
-    def pack(self, action):
+    def unpack_action(self, action):
         if action is None:
             return ''
         r, c, s = action
