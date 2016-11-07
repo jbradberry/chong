@@ -62,7 +62,7 @@ class Board(object):
                               for (r, c), v in cls.positions.iteritems()
                               if v)
 
-    def start(self):
+    def starting_state(self):
         # p1 position, p2 position, p1 placed, p2 placed, player to move
         return (self.positions[(0,3)], self.positions[(7,4)], 0, 0, 1)
 
