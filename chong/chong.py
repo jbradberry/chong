@@ -166,23 +166,60 @@ class Board(object):
     def current_player(self, state):
         return state[-1]
 
-    def winner(self, history):
+    def is_ended(self, history):
         state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         if p1_xy == 0 or p2_xy == 0:
-            return 0
+            return False
         if self.inv_positions[p1_xy][0] == self.rows - 1:
-            return 1
+            return True
         if self.inv_positions[p2_xy][0] == 0:
-            return 2
+            return True
         if not self.legal_actions(history):
-            return 3 - player
+            return True
         if history.count(state) >= 3:
-            return 3
-        return 0
+            return True
+        return False
 
-    def winner_message(self, winner):
-        if winner == 3:
+    def win_values(self, history):
+        if not self.is_ended(history):
+            return
+
+        state = history[-1]
+        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+
+        if self.inv_positions[p1_xy][0] == self.rows - 1:
+            return {1: 1, 2: 0}
+        if self.inv_positions[p2_xy][0] == 0:
+            return {1: 0, 2: 1}
+        if not self.legal_actions(history):
+            return {player: 0, 3 - player: 1}
+        if history.count(state) >= 3:
+            return {1: 0.5, 2: 0.5}
+
+    def points_values(self, history):
+        if not self.is_ended(history):
+            return
+
+        state = history[-1]
+        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_row = self.inv_positions[p1_xy][0]
+        p2_row = self.inv_positions[p2_xy][0]
+
+        if p1_row == self.rows - 1:
+            return {1: p2_row, 2: -p2_row}
+        if p2_row == 0:
+            p1_row = self.rows - 1 - p1_row  # invert the orientation
+            return {1: -p1_row, 2: p1_row}
+        if not self.legal_actions(history):
+            return {player: -2 * self.rows, 3 - player: 2 * self.rows}
+        if history.count(state) >= 3:
+            return {1: 0, 2: 0}
+
+    def winner_message(self, winners):
+        winners = sorted((v, k) for k, v in winners.iteritems())
+        value, winner = winners[-1]
+        if value == 0.5:
             return "Stalemate."
         return "Winner: Player {0}.".format(winner)
