@@ -163,6 +163,9 @@ class Board(object):
 
         return jumps + pawn + placements
 
+    def previous_player(self, state):
+        return 3 - state[-1]
+
     def current_player(self, state):
         return state[-1]
 
