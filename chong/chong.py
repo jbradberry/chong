@@ -97,6 +97,44 @@ class Board(object):
         board = ''.join((header, row_sep, board, row_sep, header, reserve, msg))
         return board
 
+    def pack_state(self, data):
+        player = data['player']
+        state = {(1, 'pawn'): 0, (2, 'pawn'): 0, (1, 'stone'): 0, (2, 'stone'): 0}
+        for item in data['pieces']:
+            index = 1 << (self.cols * item['row'] + item['column'])
+            state[(item['player'], item['type'])] += index
+
+        return (state[(1, 'pawn')], state[(2, 'pawn')],
+                state[(1, 'stone')], state[(2, 'stone')], player)
+
+    def unpack_state(self, state):
+        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+
+        pieces = []
+        for r in xrange(self.rows):
+            for c in xrange(self.cols):
+                index = 1 << (self.cols * r + c)
+                if index & p1_xy:
+                    pieces.append({'type': 'pawn', 'player': 1, 'row': r, 'column': c})
+                if index & p2_xy:
+                    pieces.append({'type': 'pawn', 'player': 2, 'row': r, 'column': c})
+                if index & p1_placed:
+                    pieces.append({'type': 'stone', 'player': 1, 'row': r, 'column': c})
+                if index & p2_placed:
+                    pieces.append({'type': 'stone', 'player': 2, 'row': r, 'column': c})
+
+        return {
+            'pieces': pieces,
+            'unplaced': [
+                {'type': 'stone', 'player': 1,
+                 'quantity': self.p1_starting_stones - bin(p1_placed).count('1')},
+                {'type': 'stone', 'player': 2,
+                 'quantity': self.p2_starting_stones - bin(p2_placed).count('1')}
+            ],
+            'player': player,
+            'previous_player': 3 - player,
+        }
+
     def pack_action(self, notation):
         result = self.moveRE.match(notation)
         if result is None:
