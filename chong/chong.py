@@ -69,45 +69,43 @@ class Board(object):
     def display(self, state, action, _unicode=True):
         pieces = self.unicode_pieces if _unicode else self.str_pieces
 
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
-
         row_sep = "  |" + "-"*(4*self.cols - 1) + "|\n"
         header = " "*4 + "   ".join(string.lowercase[:self.cols]) + "\n"
         reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
-            pieces[1], self.p1_starting_stones - bin(p1_placed).count('1'),
-            pieces[2], self.p2_starting_stones - bin(p2_placed).count('1'))
+            pieces[1], next(x for x in state['unplaced'] if x['player'] == 1)['quantity'],
+            pieces[2], next(x for x in state['unplaced'] if x['player'] == 2)['quantity']
+        )
         msg = "{0}Player {1} to move.".format(
-            "Played: {0}\n".format(self.unpack_action(action)) if action else '', player)
+            "Played: {0}\n".format(
+                self.to_notation(self.to_compact_action(action))) if action else '',
+            state['player']
+        )
 
         P = [[0 for c in xrange(self.cols)] for r in xrange(self.rows)]
-        if p1_xy:
-            r, c = self.inv_positions[p1_xy]
-            P[r][c] = -1
-        if p2_xy:
-            r, c = self.inv_positions[p2_xy]
-            P[r][c] = -2
-        for v, (r, c) in self.inv_positions.iteritems():
-            if v & p1_placed:
-                P[r][c] = 1
-            elif v & p2_placed:
-                P[r][c] = 2
+        for p in state['pieces']:
+            P[p['row']][p['column']] = p['player'] * (-1 if p['type'] == 'pawn' else 1)
 
         board = row_sep.join("%d |"%i + "|".join(pieces[x] for x in row) +
                              "|\n" for i, row in enumerate(P))
         board = ''.join((header, row_sep, board, row_sep, header, reserve, msg))
         return board
 
-    def pack_state(self, data):
+    def to_compact_state(self, data):
         player = data['player']
         state = {(1, 'pawn'): 0, (2, 'pawn'): 0, (1, 'stone'): 0, (2, 'stone'): 0}
         for item in data['pieces']:
             index = 1 << (self.cols * item['row'] + item['column'])
             state[(item['player'], item['type'])] += index
 
-        return (state[(1, 'pawn')], state[(2, 'pawn')],
-                state[(1, 'stone')], state[(2, 'stone')], player)
+        return (
+            state[(1, 'pawn')],
+            state[(2, 'pawn')],
+            state[(1, 'stone')],
+            state[(2, 'stone')],
+            player
+        )
 
-    def unpack_state(self, state):
+    def to_json_state(self, state):
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         pieces = []
@@ -135,14 +133,20 @@ class Board(object):
             'previous_player': 3 - player,
         }
 
-    def pack_action(self, notation):
+    def to_compact_action(self, action):
+        return (action['row'], action['column'], action['type'] == 'stone')
+
+    def to_json_action(self, action):
+        return {'type': 'stone' if action[2] else 'pawn', 'row': action[0], 'column': action[1]}
+
+    def from_notation(self, notation):
         result = self.moveRE.match(notation)
         if result is None:
             return
         s, c, r = result.groups()
         return int(r), 'abcdefgh'.index(c), not(s)
 
-    def unpack_action(self, action):
+    def to_notation(self, action):
         if action is None:
             return ''
         r, c, s = action
