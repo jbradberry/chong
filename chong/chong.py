@@ -149,7 +149,8 @@ class Board(object):
         r, c, s = action
         return ''.join(('P' * (1 - s), 'abcdefgh'[c], str(r)))
 
-    def next_state(self, state, action):
+    def next_state(self, history, action):
+        state = history[-1]
         r, c, s = action
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
