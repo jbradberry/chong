@@ -171,39 +171,64 @@ class Board(object):
         return (p1_xy, p2_xy, p1_placed, p2_placed, player)
 
     def is_legal(self, history, action):
-        actions = set(self.legal_actions(history))
-        return action in actions
+        return action in self.legal_actions(history)
+
+    def has_legal_action(self, history):
+        state = history[-1]
+        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+
+        p1_stones = 6 - bin(p1_placed).count('1')
+        p2_stones = 7 - bin(p2_placed).count('1')
+
+        if (player == 1 and p1_stones > 0) or (player == 2 and p2_stones > 0):
+            return True
+
+        position = p1_xy if player == 1 else p2_xy
+        not_occupied = ~(p1_placed | p2_placed | p1_xy | p2_xy)
+        if any(not_occupied & 1 << (r * 8 + c) for r, c in self.pawn_moves[position]):
+            return True
+
+        stones = p1_placed if player == 1 else p2_placed
+        if not stones:
+            return False
+
+        if any(
+            stones & 1 << (jr * 8 + jc) and
+            not_occupied & 1 << (r * 8 + c)
+            for (r, c), (jr, jc) in self.pawn_jumps[position]
+        ):
+            return True
+
+        return False
 
     def legal_actions(self, history):
         state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
-        if player == 1 and p1_xy == 0:
-            return [(0, x, False) for x in xrange(8)]
-        if player == 2 and p2_xy == 0:
-            return [(7, x, False) for x in xrange(8)]
-
         p1_stones = 6 - bin(p1_placed).count('1')
         p2_stones = 7 - bin(p2_placed).count('1')
 
         placements = []
-        occupied = p1_placed | p2_placed | p1_xy | p2_xy
+        not_occupied = ~(p1_placed | p2_placed | p1_xy | p2_xy)
         if (player == 1 and p1_stones) or (player == 2 and p2_stones):
             placements = [
                 (r, c, True)
                 for r in xrange(1, 7) for c in xrange(8)
-                if not (occupied & 1 << (r * 8 + c))
+                if not_occupied & 1 << (r * 8 + c)
             ]
 
         position = p1_xy if player == 1 else p2_xy
         stones = p1_placed if player == 1 else p2_placed
 
         pawn = [(r, c, False) for r, c in self.pawn_moves[position]
-                if not (self.positions[(r, c)] & occupied)]
+                if not_occupied & 1 << (r * 8 + c)]
 
-        jumps = [(r, c, False) for (r,c), (jr,jc) in self.pawn_jumps[position]
-                 if not (self.positions[(r, c)] & occupied)
-                 and (self.positions[(jr, jc)] & stones)]
+        if stones:
+            jumps = [(r, c, False) for (r, c), (jr, jc) in self.pawn_jumps[position]
+                     if not_occupied & 1 << (r * 8 + c)
+                     and stones & 1 << (jr * 8 + jc)]
+        else:
+            jumps = []
 
         return jumps + pawn + placements
 
@@ -223,7 +248,7 @@ class Board(object):
             return True
         if p2_xy & 0x00000000000000ff:
             return True
-        if not self.legal_actions(history):
+        if not self.has_legal_action(history):
             return True
         if history.count(state) >= 3:
             return True
@@ -240,7 +265,7 @@ class Board(object):
             return {1: 1, 2: 0}
         if p2_xy & 0x00000000000000ff:
             return {1: 0, 2: 1}
-        if not self.legal_actions(history):
+        if not self.has_legal_action(history):
             return {player: 0, 3 - player: 1}
         if history.count(state) >= 3:
             return {1: 0.5, 2: 0.5}
@@ -267,7 +292,7 @@ class Board(object):
         if p2_row == 0:
             p1_row = 7 - p1_row  # invert the orientation
             return {1: -p1_row, 2: p1_row}
-        if not self.legal_actions(history):
+        if not self.has_legal_action(history):
             return {player: -16, 3 - player: 16}
         if history.count(state) >= 3:
             return {1: 0, 2: 0}
