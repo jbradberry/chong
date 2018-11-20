@@ -4,9 +4,6 @@ import string
 
 class Board(object):
     num_players = 2
-    rows = cols = 8
-    p1_starting_stones = 6
-    p2_starting_stones = 7
 
     # Valid pawn move offsets
     DIRECTIONS = (        (-1, 0),
@@ -44,9 +41,9 @@ class Board(object):
 
     @classmethod
     def initialize(cls):
-        cls.positions.update(((r, c), 1 << (cls.cols * r + c))
-                             for r in xrange(cls.rows)
-                             for c in xrange(cls.cols))
+        cls.positions.update(((r, c), 1 << (r * 8 + c))
+                             for r in xrange(8)
+                             for c in xrange(8))
         cls.inv_positions.update((b, a)
                                  for a, b in cls.positions.iteritems())
 
@@ -64,13 +61,13 @@ class Board(object):
 
     def starting_state(self):
         # p1 position, p2 position, p1 placed, p2 placed, player to move
-        return (self.positions[(0,3)], self.positions[(7,4)], 0, 0, 1)
+        return (1 << (0 * 8 + 3), 1 << (7 * 8 + 4), 0, 0, 1)
 
     def display(self, state, action, _unicode=True):
         pieces = self.unicode_pieces if _unicode else self.str_pieces
 
-        row_sep = "  |" + "-"*(4*self.cols - 1) + "|\n"
-        header = " "*4 + "   ".join(string.lowercase[:self.cols]) + "\n"
+        row_sep = "  |" + "-" * (4 * 8 - 1) + "|\n"
+        header = "    " + "   ".join(string.lowercase[:8]) + "\n"
         reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
             pieces[1], next(x for x in state['unplaced'] if x['player'] == 1)['quantity'],
             pieces[2], next(x for x in state['unplaced'] if x['player'] == 2)['quantity']
@@ -81,11 +78,11 @@ class Board(object):
             state['player']
         )
 
-        P = [[0 for c in xrange(self.cols)] for r in xrange(self.rows)]
+        P = [[0 for c in range(8)] for r in xrange(8)]
         for p in state['pieces']:
             P[p['row']][p['column']] = p['player'] * (-1 if p['type'] == 'pawn' else 1)
 
-        board = row_sep.join("%d |"%i + "|".join(pieces[x] for x in row) +
+        board = row_sep.join("%d |" % i + "|".join(pieces[x] for x in row) +
                              "|\n" for i, row in enumerate(P))
         board = ''.join((header, row_sep, board, row_sep, header, reserve, msg))
         return board
@@ -94,7 +91,7 @@ class Board(object):
         player = data['player']
         state = {(1, 'pawn'): 0, (2, 'pawn'): 0, (1, 'stone'): 0, (2, 'stone'): 0}
         for item in data['pieces']:
-            index = 1 << (self.cols * item['row'] + item['column'])
+            index = 1 << (item['row'] * 8 + item['column'])
             state[(item['player'], item['type'])] += index
 
         return (
@@ -109,9 +106,9 @@ class Board(object):
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         pieces = []
-        for r in xrange(self.rows):
-            for c in xrange(self.cols):
-                index = 1 << (self.cols * r + c)
+        for r in range(8):
+            for c in range(8):
+                index = 1 << (r * 8 + c)
                 if index & p1_xy:
                     pieces.append({'type': 'pawn', 'player': 1, 'row': r, 'column': c})
                 if index & p2_xy:
@@ -125,9 +122,9 @@ class Board(object):
             'pieces': pieces,
             'unplaced': [
                 {'type': 'stone', 'player': 1,
-                 'quantity': self.p1_starting_stones - bin(p1_placed).count('1')},
+                 'quantity': 6 - bin(p1_placed).count('1')},
                 {'type': 'stone', 'player': 2,
-                 'quantity': self.p2_starting_stones - bin(p2_placed).count('1')}
+                 'quantity': 7 - bin(p2_placed).count('1')}
             ],
             'player': player,
             'previous_player': 3 - player,
@@ -156,16 +153,18 @@ class Board(object):
         r, c, s = action
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
+        index = 1 << (r * 8 + c)
+
         if not s:
             if player == 1:
-                p1_xy = self.positions[(r, c)]
+                p1_xy = index
             else:
-                p2_xy = self.positions[(r, c)]
+                p2_xy = index
         else:
             if player == 1:
-                p1_placed += self.positions[(r, c)]
+                p1_placed += index
             else:
-                p2_placed += self.positions[(r, c)]
+                p2_placed += index
 
         player = 3 - player
         return (p1_xy, p2_xy, p1_placed, p2_placed, player)
@@ -179,19 +178,21 @@ class Board(object):
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
         if player == 1 and p1_xy == 0:
-            return [(0, x, False) for x in xrange(self.cols)]
+            return [(0, x, False) for x in xrange(8)]
         if player == 2 and p2_xy == 0:
-            return [(self.rows-1, x, False) for x in xrange(self.cols)]
+            return [(7, x, False) for x in xrange(8)]
 
-        p1_stones = self.p1_starting_stones - bin(p1_placed).count('1')
-        p2_stones = self.p2_starting_stones - bin(p2_placed).count('1')
+        p1_stones = 6 - bin(p1_placed).count('1')
+        p2_stones = 7 - bin(p2_placed).count('1')
 
         placements = []
         occupied = p1_placed | p2_placed | p1_xy | p2_xy
         if (player == 1 and p1_stones) or (player == 2 and p2_stones):
-            placements = [(r, c, True)
-                          for v, (r, c) in self.inv_positions.iteritems()
-                          if not (not r or r == self.rows-1 or (v & occupied))]
+            placements = [
+                (r, c, True)
+                for r in xrange(1, 7) for c in xrange(8)
+                if not (occupied & 1 << (r * 8 + c))
+            ]
 
         position = p1_xy if player == 1 else p2_xy
         stones = p1_placed if player == 1 else p2_placed
@@ -217,9 +218,9 @@ class Board(object):
 
         if p1_xy == 0 or p2_xy == 0:
             return False
-        if self.inv_positions[p1_xy][0] == self.rows - 1:
+        if p1_xy & 0xff00000000000000:
             return True
-        if self.inv_positions[p2_xy][0] == 0:
+        if p2_xy & 0x00000000000000ff:
             return True
         if not self.legal_actions(history):
             return True
@@ -234,9 +235,9 @@ class Board(object):
         state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
 
-        if self.inv_positions[p1_xy][0] == self.rows - 1:
+        if p1_xy & 0xff00000000000000:
             return {1: 1, 2: 0}
-        if self.inv_positions[p2_xy][0] == 0:
+        if p2_xy & 0x00000000000000ff:
             return {1: 0, 2: 1}
         if not self.legal_actions(history):
             return {player: 0, 3 - player: 1}
@@ -249,16 +250,24 @@ class Board(object):
 
         state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player = state
-        p1_row = self.inv_positions[p1_xy][0]
-        p2_row = self.inv_positions[p2_xy][0]
+        p1_row = (
+            4 * bool(p1_xy & 0xffffffff00000000) +
+            2 * bool(p1_xy & 0xffff0000ffff0000) +
+            bool(p1_xy & 0xff00ff00ff00ff00)
+        )
+        p2_row = (
+            4 * bool(p2_xy & 0xffffffff00000000) +
+            2 * bool(p2_xy & 0xffff0000ffff0000) +
+            bool(p2_xy & 0xff00ff00ff00ff00)
+        )
 
-        if p1_row == self.rows - 1:
+        if p1_row == 7:
             return {1: p2_row, 2: -p2_row}
         if p2_row == 0:
-            p1_row = self.rows - 1 - p1_row  # invert the orientation
+            p1_row = 7 - p1_row  # invert the orientation
             return {1: -p1_row, 2: p1_row}
         if not self.legal_actions(history):
-            return {player: -2 * self.rows, 3 - player: 2 * self.rows}
+            return {player: -16, 3 - player: 16}
         if history.count(state) >= 3:
             return {1: 0, 2: 0}
 
