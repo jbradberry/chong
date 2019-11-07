@@ -60,8 +60,8 @@ class Board(object):
                               if v)
 
     def starting_state(self):
-        # p1 position, p2 position, p1 placed, p2 placed, player to move
-        return (1 << (0 * 8 + 3), 1 << (7 * 8 + 4), 0, 0, 1)
+        # p1 position, p2 position, p1 placed, p2 placed, player to move, visit number
+        return (1 << (0 * 8 + 3), 1 << (7 * 8 + 4), 0, 0, 1, 1)
 
     def display(self, state, action, _unicode=True):
         pieces = self.unicode_pieces if _unicode else self.str_pieces
@@ -88,7 +88,6 @@ class Board(object):
         return board
 
     def to_compact_state(self, data):
-        player = data['player']
         state = {(1, 'pawn'): 0, (2, 'pawn'): 0, (1, 'stone'): 0, (2, 'stone'): 0}
         for item in data['pieces']:
             index = 1 << (item['row'] * 8 + item['column'])
@@ -99,11 +98,12 @@ class Board(object):
             state[(2, 'pawn')],
             state[(1, 'stone')],
             state[(2, 'stone')],
-            player
+            data['player'],
+            data['visit_number'],
         )
 
     def to_json_state(self, state):
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         pieces = []
         for r in range(8):
@@ -128,6 +128,7 @@ class Board(object):
             ],
             'player': player,
             'previous_player': 3 - player,
+            'visit_number': visit_num,
         }
 
     def to_compact_action(self, action):
@@ -152,7 +153,7 @@ class Board(object):
     def next_state(self, history, action):
         state = history[-1]
         r, c, s = action
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         index = 1 << (r * 8 + c)
 
@@ -168,14 +169,15 @@ class Board(object):
                 p2_placed += index
 
         player = 3 - player
-        return (p1_xy, p2_xy, p1_placed, p2_placed, player)
+        visit_num = 1 if s else sum(1 for S in history if S[:5] == (p1_xy, p2_xy, p1_placed, p2_placed, player)) + 1
+        return (p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num)
 
     def is_legal(self, history, action):
         return action in self.legal_actions(history)
 
     def has_legal_action(self, history):
         state = history[-1]
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         p1_stones = 6 - bin(p1_placed).count('1')
         p2_stones = 7 - bin(p2_placed).count('1')
@@ -203,7 +205,7 @@ class Board(object):
 
     def legal_actions(self, history):
         state = history[-1]
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         p1_stones = 6 - bin(p1_placed).count('1')
         p2_stones = 7 - bin(p2_placed).count('1')
@@ -233,14 +235,14 @@ class Board(object):
         return jumps + pawn + placements
 
     def previous_player(self, state):
-        return 3 - state[-1]
+        return 3 - state[4]
 
     def current_player(self, state):
-        return state[-1]
+        return state[4]
 
     def is_ended(self, history):
         state = history[-1]
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         if p1_xy == 0 or p2_xy == 0:
             return False
@@ -250,7 +252,7 @@ class Board(object):
             return True
         if not self.has_legal_action(history):
             return True
-        if history.count(state) >= 3:
+        if visit_num >= 3:
             return True
         return False
 
@@ -259,7 +261,7 @@ class Board(object):
             return
 
         state = history[-1]
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         if p1_xy & 0xff00000000000000:
             return {1: 1, 2: 0}
@@ -267,7 +269,7 @@ class Board(object):
             return {1: 0, 2: 1}
         if not self.has_legal_action(history):
             return {player: 0, 3 - player: 1}
-        if history.count(state) >= 3:
+        if visit_num >= 3:
             return {1: 0.5, 2: 0.5}
 
     def points_values(self, history):
@@ -275,7 +277,7 @@ class Board(object):
             return
 
         state = history[-1]
-        p1_xy, p2_xy, p1_placed, p2_placed, player = state
+        p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
         p1_row = (
             4 * bool(p1_xy & 0xffffffff00000000) +
             2 * bool(p1_xy & 0xffff0000ffff0000) +
@@ -294,7 +296,7 @@ class Board(object):
             return {1: -p1_row, 2: p1_row}
         if not self.has_legal_action(history):
             return {player: -16, 3 - player: 16}
-        if history.count(state) >= 3:
+        if visit_num >= 3:
             return {1: 0, 2: 0}
 
     def winner_message(self, winners):
