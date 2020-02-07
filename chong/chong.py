@@ -172,8 +172,8 @@ class Board(object):
         visit_num = 1 if s else sum(1 for S in history if S[:5] == (p1_xy, p2_xy, p1_placed, p2_placed, player)) + 1
         return (p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num)
 
-    def is_legal(self, history, action):
-        return action in self.legal_actions(history)
+    def is_legal(self, state, action):
+        return action in self.legal_actions(state)
 
     def has_legal_action(self, history):
         state = history[-1]
@@ -203,8 +203,7 @@ class Board(object):
 
         return False
 
-    def legal_actions(self, history):
-        state = history[-1]
+    def legal_actions(self, state):
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         p1_stones = 6 - bin(p1_placed).count('1')
@@ -240,8 +239,7 @@ class Board(object):
     def current_player(self, state):
         return state[4]
 
-    def is_ended(self, history):
-        state = history[-1]
+    def is_ended(self, state):
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         if p1_xy == 0 or p2_xy == 0:
@@ -256,11 +254,10 @@ class Board(object):
             return True
         return False
 
-    def win_values(self, history):
-        if not self.is_ended(history):
+    def win_values(self, state):
+        if not self.is_ended(state):
             return
 
-        state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         if p1_xy & 0xff00000000000000:
@@ -272,11 +269,10 @@ class Board(object):
         if visit_num >= 3:
             return {1: 0.5, 2: 0.5}
 
-    def points_values(self, history):
-        if not self.is_ended(history):
+    def points_values(self, state):
+        if not self.is_ended(state):
             return
 
-        state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
         p1_row = (
             4 * bool(p1_xy & 0xffffffff00000000) +
