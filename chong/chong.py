@@ -175,8 +175,7 @@ class Board(object):
     def is_legal(self, state, action):
         return action in self.legal_actions(state)
 
-    def has_legal_action(self, history):
-        state = history[-1]
+    def has_legal_action(self, state):
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         p1_stones = 6 - bin(p1_placed).count('1')
@@ -248,7 +247,7 @@ class Board(object):
             return True
         if p2_xy & 0x00000000000000ff:
             return True
-        if not self.has_legal_action(history):
+        if not self.has_legal_action(state):
             return True
         if visit_num >= 3:
             return True
@@ -264,7 +263,7 @@ class Board(object):
             return {1: 1, 2: 0}
         if p2_xy & 0x00000000000000ff:
             return {1: 0, 2: 1}
-        if not self.has_legal_action(history):
+        if not self.has_legal_action(state):
             return {player: 0, 3 - player: 1}
         if visit_num >= 3:
             return {1: 0.5, 2: 0.5}
@@ -290,7 +289,7 @@ class Board(object):
         if p2_row == 0:
             p1_row = 7 - p1_row  # invert the orientation
             return {1: -p1_row, 2: p1_row}
-        if not self.has_legal_action(history):
+        if not self.has_legal_action(state):
             return {player: -16, 3 - player: 16}
         if visit_num >= 3:
             return {1: 0, 2: 0}
