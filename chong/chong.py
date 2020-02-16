@@ -172,11 +172,10 @@ class Board(object):
         visit_num = 1 if s else sum(1 for S in history if S[:5] == (p1_xy, p2_xy, p1_placed, p2_placed, player)) + 1
         return (p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num)
 
-    def is_legal(self, history, action):
-        return action in self.legal_actions(history)
+    def is_legal(self, state, action):
+        return action in self.legal_actions(state)
 
-    def has_legal_action(self, history):
-        state = history[-1]
+    def has_legal_action(self, state):
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         p1_stones = 6 - bin(p1_placed).count('1')
@@ -203,8 +202,7 @@ class Board(object):
 
         return False
 
-    def legal_actions(self, history):
-        state = history[-1]
+    def legal_actions(self, state):
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         p1_stones = 6 - bin(p1_placed).count('1')
@@ -240,8 +238,7 @@ class Board(object):
     def current_player(self, state):
         return state[4]
 
-    def is_ended(self, history):
-        state = history[-1]
+    def is_ended(self, state):
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         if p1_xy == 0 or p2_xy == 0:
@@ -250,33 +247,31 @@ class Board(object):
             return True
         if p2_xy & 0x00000000000000ff:
             return True
-        if not self.has_legal_action(history):
+        if not self.has_legal_action(state):
             return True
         if visit_num >= 3:
             return True
         return False
 
-    def win_values(self, history):
-        if not self.is_ended(history):
+    def win_values(self, state):
+        if not self.is_ended(state):
             return
 
-        state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
 
         if p1_xy & 0xff00000000000000:
             return {1: 1, 2: 0}
         if p2_xy & 0x00000000000000ff:
             return {1: 0, 2: 1}
-        if not self.has_legal_action(history):
+        if not self.has_legal_action(state):
             return {player: 0, 3 - player: 1}
         if visit_num >= 3:
             return {1: 0.5, 2: 0.5}
 
-    def points_values(self, history):
-        if not self.is_ended(history):
+    def points_values(self, state):
+        if not self.is_ended(state):
             return
 
-        state = history[-1]
         p1_xy, p2_xy, p1_placed, p2_placed, player, visit_num = state
         p1_row = (
             4 * bool(p1_xy & 0xffffffff00000000) +
@@ -294,7 +289,7 @@ class Board(object):
         if p2_row == 0:
             p1_row = 7 - p1_row  # invert the orientation
             return {1: -p1_row, 2: p1_row}
-        if not self.has_legal_action(history):
+        if not self.has_legal_action(state):
             return {player: -16, 3 - player: 16}
         if visit_num >= 3:
             return {1: 0, 2: 0}
