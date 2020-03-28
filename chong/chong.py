@@ -1,5 +1,7 @@
+from __future__ import absolute_import
 import re
-import string
+import six
+from six.moves import range
 
 
 class Board(object):
@@ -42,21 +44,21 @@ class Board(object):
     @classmethod
     def initialize(cls):
         cls.positions.update(((r, c), 1 << (r * 8 + c))
-                             for r in xrange(8)
-                             for c in xrange(8))
+                             for r in range(8)
+                             for c in range(8))
         cls.inv_positions.update((b, a)
-                                 for a, b in cls.positions.iteritems())
+                                 for a, b in six.iteritems(cls.positions))
 
         cls.pawn_moves.update((v, tuple((r+dr, c+dc)
                                         for dr, dc in cls.DIRECTIONS
                                         if (r+dr, c+dc) in cls.positions))
-                              for (r, c), v in cls.positions.iteritems()
+                              for (r, c), v in six.iteritems(cls.positions)
                               if v)
         cls.pawn_jumps.update((v, tuple(((r+dr, c+dc), (r+jr, c+jc))
                                         for (dr, dc), (jr, jc)
                                         in cls.JUMP_DIRECTIONS
                                         if (r+dr, c+dc) in cls.positions))
-                              for (r, c), v in cls.positions.iteritems()
+                              for (r, c), v in six.iteritems(cls.positions)
                               if v)
 
     def starting_state(self):
@@ -67,7 +69,7 @@ class Board(object):
         pieces = self.unicode_pieces if _unicode else self.str_pieces
 
         row_sep = "  |" + "-" * (4 * 8 - 1) + "|\n"
-        header = "    " + "   ".join(string.lowercase[:8]) + "\n"
+        header = "    " + "   ".join('abcdefgh') + "\n"
         reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
             pieces[1], next(x for x in state['unplaced'] if x['player'] == 1)['quantity'],
             pieces[2], next(x for x in state['unplaced'] if x['player'] == 2)['quantity']
@@ -78,7 +80,7 @@ class Board(object):
             state['player']
         )
 
-        P = [[0 for c in range(8)] for r in xrange(8)]
+        P = [[0 for c in range(8)] for r in range(8)]
         for p in state['pieces']:
             P[p['row']][p['column']] = p['player'] * (-1 if p['type'] == 'pawn' else 1)
 
@@ -213,7 +215,7 @@ class Board(object):
         if (player == 1 and p1_stones) or (player == 2 and p2_stones):
             placements = [
                 (r, c, True)
-                for r in xrange(1, 7) for c in xrange(8)
+                for r in range(1, 7) for c in range(8)
                 if not_occupied & 1 << (r * 8 + c)
             ]
 
@@ -295,7 +297,7 @@ class Board(object):
             return {1: 0, 2: 0}
 
     def winner_message(self, winners):
-        winners = sorted((v, k) for k, v in winners.iteritems())
+        winners = sorted((v, k) for k, v in six.iteritems(winners))
         value, winner = winners[-1]
         if value == 0.5:
             return "Stalemate."

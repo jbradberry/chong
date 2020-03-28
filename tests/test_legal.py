@@ -1,6 +1,8 @@
+from __future__ import absolute_import
 import unittest
 
 from chong import chong
+from six.moves import range
 
 
 board = chong.Board()
@@ -117,13 +119,13 @@ class IsLegalPlacementTestCase(unittest.TestCase):
 
         # p1 to move
         player = 1
-        stones = sum(board.positions[(1, x)] for x in xrange(6))
+        stones = sum(board.positions[(1, x)] for x in range(6))
         state = (p1, p2, stones, 0, player, 1)
         self.assertFalse(board.is_legal(state, (4, 4, True)))
 
         # p2 to move
         player = 2
-        stones = sum(board.positions[(6, x)] for x in xrange(7))
+        stones = sum(board.positions[(6, x)] for x in range(7))
         state = (p1, p2, 0, stones, player, 1)
         self.assertFalse(board.is_legal(state, (3, 3, True)))
 
