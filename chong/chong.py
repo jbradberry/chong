@@ -28,8 +28,8 @@ class Board(object):
 
     str_pieces = {0: "   ", 1: " x ", 2: " o ",
                   -1: "PX ", -2: "PO "}
-    unicode_pieces = {0: "   ", 1: u" \u25cb ", 2: u" \u25cf ",
-                      -1: u" \u2659 ", -2: u" \u265f "}
+    unicode_pieces = {0: "   ", 1: " \u25cb ", 2: " \u25cf ",
+                      -1: " \u2659 ", -2: " \u265f "}
 
     moveRE = re.compile(r'([Pp]?)([a-h])([0-7])')
 
@@ -67,7 +67,7 @@ class Board(object):
 
         row_sep = "  |" + "-" * (4 * 8 - 1) + "|\n"
         header = "    " + "   ".join('abcdefgh') + "\n"
-        reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
+        reserve = "       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
             pieces[1], next(x for x in state['unplaced'] if x['player'] == 1)['quantity'],
             pieces[2], next(x for x in state['unplaced'] if x['player'] == 2)['quantity']
         )
