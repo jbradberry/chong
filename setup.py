@@ -9,7 +9,6 @@ setup(
     entry_points={
         'jrb_board.games': 'chong = chong.chong:Board',
     },
-    install_requires=['six'],
     license='LICENSE',
     description="An implementation of the board game Chong.",
 )

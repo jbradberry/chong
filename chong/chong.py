@@ -1,6 +1,4 @@
 import re
-import six
-from six.moves import range
 
 
 class Board(object):
@@ -46,18 +44,18 @@ class Board(object):
                              for r in range(8)
                              for c in range(8))
         cls.inv_positions.update((b, a)
-                                 for a, b in six.iteritems(cls.positions))
+                                 for a, b in cls.positions.items())
 
         cls.pawn_moves.update((v, tuple((r+dr, c+dc)
                                         for dr, dc in cls.DIRECTIONS
                                         if (r+dr, c+dc) in cls.positions))
-                              for (r, c), v in six.iteritems(cls.positions)
+                              for (r, c), v in cls.positions.items()
                               if v)
         cls.pawn_jumps.update((v, tuple(((r+dr, c+dc), (r+jr, c+jc))
                                         for (dr, dc), (jr, jc)
                                         in cls.JUMP_DIRECTIONS
                                         if (r+dr, c+dc) in cls.positions))
-                              for (r, c), v in six.iteritems(cls.positions)
+                              for (r, c), v in cls.positions.items()
                               if v)
 
     def starting_state(self):
@@ -296,7 +294,7 @@ class Board(object):
             return {1: 0, 2: 0}
 
     def winner_message(self, winners):
-        winners = sorted((v, k) for k, v in six.iteritems(winners))
+        winners = sorted((v, k) for k, v in winners.items())
         value, winner = winners[-1]
         if value == 0.5:
             return "Stalemate."
