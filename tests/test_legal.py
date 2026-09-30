@@ -1,8 +1,6 @@
-from __future__ import absolute_import
 import unittest
 
 from chong import chong
-from six.moves import range
 
 
 board = chong.Board()

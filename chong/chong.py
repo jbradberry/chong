@@ -1,10 +1,7 @@
-from __future__ import absolute_import
 import re
-import six
-from six.moves import range
 
 
-class Board(object):
+class Board:
     num_players = 2
 
     # Valid pawn move offsets
@@ -31,8 +28,8 @@ class Board(object):
 
     str_pieces = {0: "   ", 1: " x ", 2: " o ",
                   -1: "PX ", -2: "PO "}
-    unicode_pieces = {0: "   ", 1: u" \u25cb ", 2: u" \u25cf ",
-                      -1: u" \u2659 ", -2: u" \u265f "}
+    unicode_pieces = {0: "   ", 1: " \u25cb ", 2: " \u25cf ",
+                      -1: " \u2659 ", -2: " \u265f "}
 
     moveRE = re.compile(r'([Pp]?)([a-h])([0-7])')
 
@@ -47,18 +44,18 @@ class Board(object):
                              for r in range(8)
                              for c in range(8))
         cls.inv_positions.update((b, a)
-                                 for a, b in six.iteritems(cls.positions))
+                                 for a, b in cls.positions.items())
 
         cls.pawn_moves.update((v, tuple((r+dr, c+dc)
                                         for dr, dc in cls.DIRECTIONS
                                         if (r+dr, c+dc) in cls.positions))
-                              for (r, c), v in six.iteritems(cls.positions)
+                              for (r, c), v in cls.positions.items()
                               if v)
         cls.pawn_jumps.update((v, tuple(((r+dr, c+dc), (r+jr, c+jc))
                                         for (dr, dc), (jr, jc)
                                         in cls.JUMP_DIRECTIONS
                                         if (r+dr, c+dc) in cls.positions))
-                              for (r, c), v in six.iteritems(cls.positions)
+                              for (r, c), v in cls.positions.items()
                               if v)
 
     def starting_state(self):
@@ -67,27 +64,25 @@ class Board(object):
 
     def display(self, state, action, _unicode=True):
         pieces = self.unicode_pieces if _unicode else self.str_pieces
-
-        row_sep = "  |" + "-" * (4 * 8 - 1) + "|\n"
-        header = "    " + "   ".join('abcdefgh') + "\n"
-        reserve = u"       {0}\u00d7 {1}          {2}\u00d7 {3}\n".format(
-            pieces[1], next(x for x in state['unplaced'] if x['player'] == 1)['quantity'],
-            pieces[2], next(x for x in state['unplaced'] if x['player'] == 2)['quantity']
-        )
-        msg = "{0}Player {1} to move.".format(
-            "Played: {0}\n".format(
-                self.to_notation(self.to_compact_action(action))) if action else '',
-            state['player']
-        )
+        unplaced1 = next(x for x in state['unplaced'] if x['player'] == 1)['quantity']
+        unplaced2 = next(x for x in state['unplaced'] if x['player'] == 2)['quantity']
 
         P = [[0 for c in range(8)] for r in range(8)]
         for p in state['pieces']:
             P[p['row']][p['column']] = p['player'] * (-1 if p['type'] == 'pawn' else 1)
 
-        board = row_sep.join("%d |" % i + "|".join(pieces[x] for x in row) +
-                             "|\n" for i, row in enumerate(P))
-        board = ''.join((header, row_sep, board, row_sep, header, reserve, msg))
-        return board
+        return ''.join((
+            "    a   b   c   d   e   f   g   h\n",
+            "  |-------------------------------|\n",
+            "  |-------------------------------|\n".join(
+                f"{i:d} |{'|'.join(pieces[x] for x in row)}|\n" for i, row in enumerate(P)
+            ),
+            "  |-------------------------------|\n",
+            "    a   b   c   d   e   f   g   h\n",
+            f"       {pieces[1]}× {unplaced1}          {pieces[2]}× {unplaced2}\n",
+            f"Played: {self.to_notation(self.to_compact_action(action))}\n" if action else '',
+            f"Player {state['player']} to move."
+        ))
 
     def to_compact_state(self, data):
         state = {(1, 'pawn'): 0, (2, 'pawn'): 0, (1, 'stone'): 0, (2, 'stone'): 0}
@@ -297,8 +292,8 @@ class Board(object):
             return {1: 0, 2: 0}
 
     def winner_message(self, winners):
-        winners = sorted((v, k) for k, v in six.iteritems(winners))
+        winners = sorted((v, k) for k, v in winners.items())
         value, winner = winners[-1]
         if value == 0.5:
             return "Stalemate."
-        return "Winner: Player {0}.".format(winner)
+        return f"Winner: Player {winner}."
